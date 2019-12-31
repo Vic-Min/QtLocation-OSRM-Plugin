@@ -1,0 +1,12 @@
+{
+    "Keys": ["offline_route"],
+    "Provider": "offline_route",
+    "Version": 100,
+    "Experimental": false,
+    "Features": [
+        "OfflineRoutingFeature",
+        "AlternativeRoutesFeature",
+        "ExcludeAreasRoutingFeature",
+        "RouteUpdatesFeature"
+    ]
+}

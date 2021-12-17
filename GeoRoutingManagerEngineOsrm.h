@@ -1,5 +1,5 @@
-#ifndef ROUTINGMANAGERENGINE_H
-#define ROUTINGMANAGERENGINE_H
+#ifndef GeoRoutingManagerEngineOsrm_H
+#define GeoRoutingManagerEngineOsrm_H
 
 #include <QGeoRoutingManagerEngine>
 #include <QGeoServiceProvider>

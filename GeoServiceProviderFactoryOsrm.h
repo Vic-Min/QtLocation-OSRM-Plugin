@@ -1,5 +1,5 @@
-#ifndef SERVICEPROVIDER_H
-#define SERVICEPROVIDER_H
+#ifndef GeoServiceProviderFactoryOsrm_H
+#define GeoServiceProviderFactoryOsrm_H
 
 #include <qgeoserviceproviderfactory.h>
 #include <QObject>

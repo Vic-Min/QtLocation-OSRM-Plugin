@@ -37,16 +37,6 @@ class WorkerThread;
 class GeoRoutingManagerEngineOsrm: public QGeoRoutingManagerEngine
 {
     Q_OBJECT
-    osrm::engine::EngineConfig engineConfig;
-    osrm::engine::api::RouteParameters routeParameters;
-    std::unique_ptr<const osrm::OSRM> osrm;
-#ifdef USE_Thread
-    WorkerThread* worker_;
-#endif
-
-    RouteReply* routeReply_;
-    QGeoRouteReply::Error errorCode_;
-    QString errorString_;
 
 public:
     GeoRoutingManagerEngineOsrm(const QVariantMap &parameters,
@@ -64,9 +54,16 @@ private slots:
 private:
     std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>> calcRoutes(const QGeoRouteRequest& request)const;
 
+    osrm::engine::EngineConfig engineConfig;
+    osrm::engine::api::RouteParameters routeParameters;
+    std::unique_ptr<const osrm::OSRM> osrm;
 #ifdef USE_Thread
 friend class WorkerThread;
+    WorkerThread* worker_;
 #endif
+    RouteReply* routeReply_;
+    QGeoRouteReply::Error errorCode_;
+    QString errorString_;
 };
 
 #ifdef USE_Thread

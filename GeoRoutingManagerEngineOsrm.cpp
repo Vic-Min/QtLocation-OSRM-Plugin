@@ -190,16 +190,16 @@ GeoRoutingManagerEngineOsrm::calcRoutes(const QGeoRouteRequest& request)const
         });
     }
 
-    osrm::engine::api::ResultT result = flatbuffers::FlatBufferBuilder();
+    osrm::engine::api::ResultT resultVariant = flatbuffers::FlatBufferBuilder();
 
     // Execute routing request, this does the heavy lifting
-    const auto status = osrm->Route(params, result);
+    const osrm::engine::Status status = osrm->Route(params, resultVariant);
+    const auto &fbBuffer = resultVariant.get<flatbuffers::FlatBufferBuilder>();
+    const osrm::engine::api::fbresult::FBResult* result = osrm::engine::api::fbresult::GetFBResult(fbBuffer.GetBufferPointer());
+    assert(result);
 
     if (status == osrm::engine::Status::Ok)
     {
-        auto &fb_result = result.get<flatbuffers::FlatBufferBuilder>();
-        auto result = osrm::engine::api::fbresult::GetFBResult(fb_result.GetBufferPointer());
-        assert(result);
         assert( ! result->error());
         assert(result->routes());
         const auto& routes = *result->routes();
@@ -223,9 +223,20 @@ GeoRoutingManagerEngineOsrm::calcRoutes(const QGeoRouteRequest& request)const
         }
 
     }
-    else if (status == osrm::engine::Status::Error)
+    else
     {
-        //  обработка ошибок
+        if (result->error())
+        {
+            const osrm::engine::api::fbresult::Error* errorCode = result->code();
+            const flatbuffers::String* code = errorCode->code();
+            const flatbuffers::String* message = errorCode->message();
+            errorString = QString("code: %1, message: %2").arg(code->c_str()).arg(message->c_str());
+        }
+        else
+        {
+            errorString = "UnknownError";
+        }
+
         error = QGeoRouteReply::Error::UnknownError;
     }
 

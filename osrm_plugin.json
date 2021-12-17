@@ -1,6 +1,6 @@
 {
-    "Keys": ["offline_route"],
-    "Provider": "offline_route",
+    "Keys": ["osrm"],
+    "Provider": "osrm",
     "Version": 100,
     "Experimental": false,
     "Features": [

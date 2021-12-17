@@ -2,8 +2,6 @@
 #include "osrm/coordinate.hpp"
 #include "osrm/engine/api/flatbuffers/fbresult_generated.h"
 
-#include <iostream>
-
 
 GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &parameters,
     QGeoServiceProvider::Error *error, QString *errorString) :
@@ -34,10 +32,8 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
     if (parameters.contains("engineConfig.algorithm")) {
         auto algorithm = qvariant_cast<QString>(parameters.value("engineConfig.algorithm"));
         if (algorithm == "CH")
-            // Contraction Hierarchies (CH): requires extract+contract pre-processing
             engineConfig.algorithm = osrm::engine::EngineConfig::Algorithm::CH;
         else if (algorithm == "MLD")
-            // Multi-Level Dijkstra (MLD): requires extract+partition+customize pre-processing
             engineConfig.algorithm = osrm::engine::EngineConfig::Algorithm::MLD;
         else
         {
@@ -90,79 +86,6 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
 
 QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteRequest& request)
 {
-    //  TODO: разобраться с временем жизни routeReply_:
-    //  - кто его уничтожает?
-    //    в справке написано:
-/*
-    The user is responsible for deleting the returned reply object, although
-    this can be done in the slot connected to QGeoRoutingManagerEngine::finished(),
-    QGeoRoutingManagerEngine::error(), QGeoRouteReply::finished() or
-    QGeoRouteReply::error() with deleteLater().
-*/
-    //  вызывается calculateRoute в
-/*
-    void QDeclarativeGeoRouteModel::update()
-    {
-    ...
-        emit abortRequested(); // Clear previous requests
-    ...
-        QGeoRouteReply *reply = routingManager->calculateRoute(request);
-        setStatus(QDeclarativeGeoRouteModel::Loading);
-        if (!reply->isFinished()) {
-            connect(this, &QDeclarativeGeoRouteModel::abortRequested, reply, &QGeoRouteReply::abort);
-        } else {
-            if (reply->error() == QGeoRouteReply::NoError) {
-                routingFinished(reply);
-            } else {
-                routingError(reply, reply->error(), reply->errorString());
-            }
-        }
-    }
-
-    т.е. если запрос сразу не вернул результат, то вызывается
-            connect(this, &QDeclarativeGeoRouteModel::abortRequested, reply, &QGeoRouteReply::abort);
-    а запрос нигде не сохраняется.
-    А как получается результат?
-
-    Результат получается при обработке сигнала finished от routingManager:
-
-    void QDeclarativeGeoRouteModel::pluginReady()
-    {
-        QGeoServiceProvider *serviceProvider = plugin_->sharedGeoServiceProvider();
-        QGeoRoutingManager *routingManager = serviceProvider->routingManager();
-    ...
-        connect(routingManager, SIGNAL(finished(QGeoRouteReply*)),
-                this, SLOT(routingFinished(QGeoRouteReply*)));
-        connect(routingManager, SIGNAL(error(QGeoRouteReply*,QGeoRouteReply::Error,QString)),
-                this, SLOT(routingError(QGeoRouteReply*,QGeoRouteReply::Error,QString)));
-    }
-
-
-
-ответы обработанные или ошибочные удаляются Qt при отработке этих сигналов:
-
-void QDeclarativeGeoRouteModel::routingFinished(QGeoRouteReply *reply)
-{
-    ...
-    reply->deleteLater();
-    ...
-}
-
-void QDeclarativeGeoRouteModel::routingError(QGeoRouteReply *reply, QGeoRouteReply::Error error, const QString &errorString)
-{
-    ...
-    reply->deleteLater();
-    ...
-}
-
-*/
-
-    //  - зачем его хранить в этом классе? для расчётов в фоне?
-    //  - если расчёты будут производиться в фоновом потоке,
-    //    узнает ли потребитель, что routeReply_ изменился?
-    //  - calculateRoute может вызываться несколько раз?
-    //    если при повторном вызове calculateRoute не уничтожить предыдущий
-    //    routeReply_, утечки памяти не будет?
 
     routeReply_ = new RouteReply();
 #ifdef USE_Thread
@@ -190,14 +113,6 @@ void QDeclarativeGeoRouteModel::routingError(QGeoRouteReply *reply, QGeoRouteRep
 
     return routeReply_;
 }
-
-/*
-QGeoRouteReply *GeoRoutingManagerEngineOsrm::updateRoute(const QGeoRoute &route, const QGeoCoordinate &position)
-{
-    routeReply_ = new RouteReply();
-    return routeReply_;
-};
-*/
 
 std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>>
 GeoRoutingManagerEngineOsrm::calcRoutes(const QGeoRouteRequest& request)const
@@ -279,10 +194,6 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
         //  In short, use this function only if absolutely necessary.
     }
 #endif
-/*
-    errorCode_ = QGeoRouteReply::UnknownError;
-    errorString_ = "aborted";
-*/
 }
 
 #ifdef USE_Thread
@@ -305,15 +216,10 @@ void GeoRoutingManagerEngineOsrm::updateRoutes()
 
 void WorkerThread::run()
 {
-    std::cout << "WorkerThread::run()" << std::endl;
-#if 1
     auto result = owner_->calcRoutes(request);
     error       = std::get<QGeoRouteReply::Error>(result);
     errorString = std::get<QGeoRouteReply::Error>(result);
     routes      = std::get<QList<QGeoRoute>>(result);
-#else
-    {error, errorString, routes} = owner_->calcRoutes(request);
-#endif
 };
 #endif
 

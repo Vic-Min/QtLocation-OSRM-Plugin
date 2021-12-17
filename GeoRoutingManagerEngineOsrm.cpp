@@ -81,7 +81,21 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
         return;
     }
 
-    osrm = std::make_unique<osrm::OSRM>(engineConfig);
+    try
+    {
+        osrm = std::make_unique<osrm::OSRM>(engineConfig);
+    }
+    catch (const std::exception& e)
+    {
+        setError(
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 12, 1))
+            QGeoServiceProvider::LoaderError,
+#else
+            QGeoServiceProvider::ConnectionError,
+#endif
+            QString("OSRM Routing plugin: ") + e.what());
+        return;
+    }
 
 //    setLocale(QLocale (QLocale::German, QLocale::Germany));
     //  TODO: разобраться с setSupported*

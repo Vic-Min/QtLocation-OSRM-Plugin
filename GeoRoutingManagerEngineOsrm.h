@@ -25,9 +25,9 @@ class RouteReply :public QGeoRouteReply
 public:
     RouteReply(QObject *parent=0) :QGeoRouteReply (QGeoRouteRequest(), parent)
     {}
-    void  callSetError ( Error error, const QString & errorString ) {setError(error, errorString);}
-    void  callSetFinished ( bool finished ) {setFinished(finished);}
-    void  callSetRoutes(const QList<QGeoRoute> &routes) {setRoutes(routes);}
+    using QGeoRouteReply::setError;
+    using QGeoRouteReply::setFinished;
+    using QGeoRouteReply::setRoutes;
 };
 
 #ifdef USE_Thread

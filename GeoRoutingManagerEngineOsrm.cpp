@@ -166,7 +166,7 @@ void QDeclarativeGeoRouteModel::routingError(QGeoRouteReply *reply, QGeoRouteRep
 
     routeReply_ = new RouteReply();
 #ifdef USE_Thread
-    routeReply_->callSetFinished(false);
+    routeReply_->setFinished(false);
     assert( ! routeReply_->isFinished());
     worker_->request = request;
     worker_->start();
@@ -178,13 +178,13 @@ void QDeclarativeGeoRouteModel::routingError(QGeoRouteReply *reply, QGeoRouteRep
 
     if (std::get<QGeoRouteReply::Error>(result) == QGeoRouteReply::Error::NoError)
     {
-        routeReply_->callSetRoutes(std::get<QList<QGeoRoute>>(result));
-        routeReply_->callSetError(QGeoRouteReply::NoError, "no error");
-        routeReply_->callSetFinished(true);
+        routeReply_->setRoutes(std::get<QList<QGeoRoute>>(result));
+        routeReply_->setError(QGeoRouteReply::NoError, "no error");
+        routeReply_->setFinished(true);
     }
     else
     {
-        routeReply_->callSetError(std::get<QGeoRouteReply::Error>(result), std::get<QString>(result));
+        routeReply_->setError(std::get<QGeoRouteReply::Error>(result), std::get<QString>(result));
     }
 #endif
 
@@ -292,13 +292,13 @@ void GeoRoutingManagerEngineOsrm::updateRoutes()
     assert(worker_->isFinished());
     if (worker_->error == QGeoRouteReply::Error::NoError)
     {
-        routeReply_->callSetRoutes(worker_->routes);
-        routeReply_->callSetFinished(true);
+        routeReply_->setRoutes(worker_->routes);
+        routeReply_->setFinished(true);
         emit finished(routeReply_);
     }
     else
     {
-        routeReply_->callSetError(worker_->error, worker_->errorString);
+        routeReply_->setError(worker_->error, worker_->errorString);
         emit error(routeReply_, worker_->error, worker_->errorString);
     }
 }

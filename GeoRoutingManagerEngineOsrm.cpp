@@ -2,6 +2,7 @@
 #include "osrm/coordinate.hpp"
 #include "osrm/engine/api/flatbuffers/fbresult_generated.h"
 
+#include <QDebug>
 
 GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &parameters,
     QGeoServiceProvider::Error *error, QString *errorString) :
@@ -12,22 +13,50 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
     routeReply_(nullptr),
     errorCode_(QGeoRouteReply::NoError)
 {
-    Q_UNUSED(error)
-    Q_UNUSED(errorString)
-
 #ifdef USE_Thread
     bool ok = connect(worker_, SIGNAL(finished()), this, SLOT(updateRoutes()));
     assert(ok);
 #endif
 
+    if (error)
+        *error = QGeoServiceProvider::NoError;
+    if (errorString)
+        *errorString = QString();
+
+    auto setError = [=](QGeoServiceProvider::Error errorCode, QString errorMsg)
+    {
+        if (error)
+            *error = errorCode;
+        if (errorString)
+            *errorString = errorMsg;
+        qWarning() << errorMsg;
+    };
+
     if (parameters.contains("engineConfig.storage_config")) {
         QString storage {qvariant_cast<QString>(parameters.value("engineConfig.storage_config"))};
         engineConfig.storage_config = boost::filesystem::path{storage.toStdString()};
+        if ( ! engineConfig.storage_config.IsValid())
+        {
+            setError(QGeoServiceProvider::ConnectionError,
+                "OSRM Routing plugin: " + storage + " file not found");
+            return;
+        }
+    }
+    else
+    {
+        setError(QGeoServiceProvider::MissingRequiredParameterError,
+            "OSRM Routing plugin: storage_config parameter missing");
+        return;
     }
 
     if (parameters.contains("engineConfig.use_shared_memory")) {
         engineConfig.use_shared_memory = qvariant_cast<bool>(parameters.value("engineConfig.use_shared_memory"));
     }
+
+    if (parameters.contains("engineConfig.use_mmap"))
+        engineConfig.use_mmap = qvariant_cast<bool>(parameters.value("engineConfig.use_mmap"));
+    else
+        engineConfig.use_mmap = true;
 
     if (parameters.contains("engineConfig.algorithm")) {
         auto algorithm = qvariant_cast<QString>(parameters.value("engineConfig.algorithm"));
@@ -37,10 +66,19 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
             engineConfig.algorithm = osrm::engine::EngineConfig::Algorithm::MLD;
         else
         {
-            //  выдача предупреждения
-
-            //  по умолчанию установлен CH
+            setError(QGeoServiceProvider::NoError,
+                "OSRM Routing plugin: invalid algorithm: " + algorithm);
         }
+    }
+
+    if ( ! engineConfig.IsValid())
+    {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 12, 1))
+        setError(QGeoServiceProvider::LoaderError, "OSRM Routing plugin: invalid engineConfig");
+#else
+        setError(QGeoServiceProvider::ConnectionError, "OSRM Routing plugin: invalid engineConfig");
+#endif
+        return;
     }
 
     osrm = std::make_unique<osrm::OSRM>(engineConfig);

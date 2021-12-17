@@ -14,9 +14,6 @@ class GeoServiceProviderFactoryOsrm: public QObject, public QGeoServiceProviderF
                       FILE "osrm_plugin.json")
 
 public:
-    GeoServiceProviderFactoryOsrm();
-    ~GeoServiceProviderFactoryOsrm();
-
     QGeoRoutingManagerEngine* createRoutingManagerEngine(
                 const QVariantMap &parameters,
                 QGeoServiceProvider::Error *error, QString *errorString ) const;

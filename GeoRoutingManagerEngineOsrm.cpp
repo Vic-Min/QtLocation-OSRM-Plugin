@@ -2,11 +2,6 @@
 #include "osrm/coordinate.hpp"
 #include "osrm/engine/api/flatbuffers/fbresult_generated.h"
 
-#ifdef USE_Concurrent
-#include <QtConcurrent>
-#include <QFuture>
-#endif
-
 #include <iostream>
 
 
@@ -170,28 +165,7 @@ void QDeclarativeGeoRouteModel::routingError(QGeoRouteReply *reply, QGeoRouteRep
     //    routeReply_, утечки памяти не будет?
 
     routeReply_ = new RouteReply();
-#ifdef USE_Concurrent
-    bool ok = connect(routeReply_, SIGNAL(aborted()), this, SLOT(requestAborted()));
-    assert(ok);
-
-    QFuture<std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>>> future =
-            QtConcurrent::run(this, &GeoRoutingManagerEngineOsrm::calcRoutes, request);
-    //  !!! the future returned by QtConcurrent::run() cannot be canceled,
-
-    //  TODO: ждать надо в отдельном потоке
-    std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>> result = future.result();
-
-    if (std::get<QGeoRouteReply::Error>(result) == QGeoRouteReply::Error::NoError)
-    {
-        routeReply_->callSetRoutes(std::get<QList<QGeoRoute>>(result));
-        routeReply_->callSetError(QGeoRouteReply::NoError, "no error");
-        routeReply_->callSetFinished(true);
-    }
-    else
-    {
-        routeReply_->callSetError(std::get<QGeoRouteReply::Error>(result), std::get<QString>(result));
-    }
-#elif defined USE_Thread
+#ifdef USE_Thread
     routeReply_->callSetFinished(false);
     assert( ! routeReply_->isFinished());
     worker_->request = request;

@@ -4,7 +4,6 @@
 #include <QGeoRoutingManagerEngine>
 #include <QGeoServiceProvider>
 
-//#define USE_Concurrent
 //#define USE_Thread
 
 #ifdef USE_Thread

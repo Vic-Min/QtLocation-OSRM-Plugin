@@ -63,8 +63,6 @@ friend class WorkerThread;
     WorkerThread* worker_;
 #endif
     RouteReply* routeReply_;
-    QGeoRouteReply::Error errorCode_;
-    QString errorString_;
 };
 
 #ifdef USE_Thread

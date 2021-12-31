@@ -10,8 +10,7 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
 #ifdef USE_Thread
     worker_(new WorkerThread(this)),
 #endif
-    routeReply_(nullptr),
-    errorCode_(QGeoRouteReply::NoError)
+    routeReply_(nullptr)
 {
 #ifdef USE_Thread
     bool ok = connect(worker_, SIGNAL(finished()), this, SLOT(updateRoutes()));

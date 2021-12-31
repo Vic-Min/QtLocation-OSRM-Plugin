@@ -138,12 +138,10 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
 
 QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteRequest& request)
 {
-
-    routeReply_ = new RouteReply();
+    routeReply_ = new RouteReply(request, this);
 #ifdef USE_Thread
     routeReply_->setFinished(false);
     assert( ! routeReply_->isFinished());
-    worker_->request = request;
     worker_->start();
 #else
     bool ok = connect(routeReply_, SIGNAL(aborted()), this, SLOT(requestAborted()));
@@ -279,7 +277,7 @@ void GeoRoutingManagerEngineOsrm::updateRoutes()
 
 void WorkerThread::run()
 {
-    auto result = owner_->calcRoutes(request);
+    auto result = owner_->calcRoutes(owner_->routeReply_->request());
     error       = std::get<QGeoRouteReply::Error>(result);
     errorString = std::get<QGeoRouteReply::Error>(result);
     routes      = std::get<QList<QGeoRoute>>(result);

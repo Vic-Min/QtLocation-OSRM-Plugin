@@ -23,7 +23,8 @@ class RouteReply :public QGeoRouteReply
     Q_OBJECT
 
 public:
-    RouteReply(QObject *parent=0) :QGeoRouteReply (QGeoRouteRequest(), parent)
+    RouteReply(const QGeoRouteRequest& request, QObject *parent = nullptr)
+        : QGeoRouteReply (request, parent)
     {}
     using QGeoRouteReply::setError;
     using QGeoRouteReply::setFinished;
@@ -76,7 +77,6 @@ public:
         , owner_(parent)
     {
     };
-    QGeoRouteRequest request;
     QGeoRouteReply::Error error = QGeoRouteReply::Error::NoError;
     QString errorString;
     QList<QGeoRoute> routes;

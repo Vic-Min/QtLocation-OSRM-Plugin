@@ -3,12 +3,7 @@
 
 #include <QGeoRoutingManagerEngine>
 #include <QGeoServiceProvider>
-
-//#define USE_Thread
-
-#ifdef USE_Thread
 #include <QThread>
-#endif
 
 #include "osrm/osrm.hpp"
 #include "osrm/engine_config.hpp"
@@ -31,9 +26,7 @@ public:
     using QGeoRouteReply::setRoutes;
 };
 
-#ifdef USE_Thread
 class WorkerThread;
-#endif
 
 class GeoRoutingManagerEngineOsrm: public QGeoRoutingManagerEngine
 {
@@ -48,9 +41,7 @@ public:
 
 private slots:
     void requestAborted();
-#ifdef USE_Thread
     void updateRoutes();
-#endif
 
 private:
     std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>> calcRoutes(const QGeoRouteRequest& request)const;
@@ -58,14 +49,11 @@ private:
     osrm::engine::EngineConfig engineConfig;
     osrm::engine::api::RouteParameters routeParameters;
     std::unique_ptr<const osrm::OSRM> osrm;
-#ifdef USE_Thread
 friend class WorkerThread;
     WorkerThread* worker_;
-#endif
     RouteReply* routeReply_;
 };
 
-#ifdef USE_Thread
 class WorkerThread : public QThread
 {
     Q_OBJECT
@@ -83,6 +71,5 @@ private:
     void run() override;
     GeoRoutingManagerEngineOsrm* owner_;
 };
-#endif
 
 #endif

@@ -7,15 +7,11 @@
 GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &parameters,
     QGeoServiceProvider::Error *error, QString *errorString) :
     QGeoRoutingManagerEngine(parameters),
-#ifdef USE_Thread
     worker_(new WorkerThread(this)),
-#endif
     routeReply_(nullptr)
 {
-#ifdef USE_Thread
     bool ok = connect(worker_, SIGNAL(finished()), this, SLOT(updateRoutes()));
     assert(ok);
-#endif
 
     if (error)
         *error = QGeoServiceProvider::NoError;
@@ -142,24 +138,9 @@ QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteReque
     bool ok = connect(routeReply_, SIGNAL(aborted()), this, SLOT(requestAborted()));
     assert(ok);
 
-#ifdef USE_Thread
     routeReply_->setFinished(false);
     assert( ! routeReply_->isFinished());
     worker_->start();
-#else
-    auto result = calcRoutes(request);
-
-    if (std::get<QGeoRouteReply::Error>(result) == QGeoRouteReply::Error::NoError)
-    {
-        routeReply_->setRoutes(std::get<QList<QGeoRoute>>(result));
-        routeReply_->setError(QGeoRouteReply::NoError, "no error");
-        routeReply_->setFinished(true);
-    }
-    else
-    {
-        routeReply_->setError(std::get<QGeoRouteReply::Error>(result), std::get<QString>(result));
-    }
-#endif
 
     return routeReply_;
 }
@@ -243,7 +224,6 @@ GeoRoutingManagerEngineOsrm::calcRoutes(const QGeoRouteRequest& request)const
 
 void GeoRoutingManagerEngineOsrm::requestAborted()
 {
-#ifdef USE_Thread
     if (worker_->isRunning())
     {
         worker_->terminate();
@@ -254,10 +234,7 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
         //  unlock any held mutexes, etc.
         //  In short, use this function only if absolutely necessary.
     }
-#endif
 }
-
-#ifdef USE_Thread
 
 void GeoRoutingManagerEngineOsrm::updateRoutes()
 {
@@ -282,6 +259,3 @@ void WorkerThread::run()
     errorString = std::get<QGeoRouteReply::Error>(result);
     routes      = std::get<QList<QGeoRoute>>(result);
 };
-#endif
-
-

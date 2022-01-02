@@ -225,13 +225,9 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
 {
     if (worker_->isRunning())
     {
+        // unfortunately there is no way to interrupt OSRM calculations,
+        // so you have to kill the thread in which OSRM is running 
         worker_->terminate();
-        //  This function is dangerous and its use is discouraged.
-        //  The thread can be terminated at any point in its code path.
-        //  Threads can be terminated while modifying data.
-        //  There is no chance for the thread to clean up after itself,
-        //  unlock any held mutexes, etc.
-        //  In short, use this function only if absolutely necessary.
         worker_->wait();
     }
 }

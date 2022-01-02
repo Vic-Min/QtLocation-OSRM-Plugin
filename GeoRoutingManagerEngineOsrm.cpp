@@ -229,6 +229,10 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
         // so you have to kill the thread in which OSRM is running 
         worker_->terminate();
         worker_->wait();
+
+        auto routeReply = qobject_cast<RouteReply*>(sender());
+        assert(routeReply);
+        routeReply->setError(QGeoRouteReply::UnknownError, "aborted");
     }
 }
 

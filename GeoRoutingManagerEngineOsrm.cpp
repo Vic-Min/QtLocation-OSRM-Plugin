@@ -138,14 +138,15 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
 QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteRequest& request)
 {
     routeReply_ = new RouteReply(request, this);
+
+    bool ok = connect(routeReply_, SIGNAL(aborted()), this, SLOT(requestAborted()));
+    assert(ok);
+
 #ifdef USE_Thread
     routeReply_->setFinished(false);
     assert( ! routeReply_->isFinished());
     worker_->start();
 #else
-    bool ok = connect(routeReply_, SIGNAL(aborted()), this, SLOT(requestAborted()));
-    assert(ok);
-
     auto result = calcRoutes(request);
 
     if (std::get<QGeoRouteReply::Error>(result) == QGeoRouteReply::Error::NoError)

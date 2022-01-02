@@ -133,21 +133,23 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
 
 QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteRequest& request)
 {
-    routeReply_ = new RouteReply(request, this);
+    auto routeReply = new RouteReply(request, this);
+    routeReply_.store(routeReply);
 
-    bool ok = connect(routeReply_, SIGNAL(aborted()), this, SLOT(requestAborted()));
+    bool ok = connect(routeReply, SIGNAL(aborted()), this, SLOT(requestAborted()));
     assert(ok);
 
     worker_->start();
 
-    return routeReply_;
+    return routeReply;
 }
 
 std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>>
 GeoRoutingManagerEngineOsrm::calcRoutes()const
 {
-    assert(routeReply_);
-    const QGeoRouteRequest request = routeReply_->request();
+    const RouteReply* routeReply = routeReply_.load();
+    assert(routeReply);
+    const QGeoRouteRequest request = routeReply->request();
 
     QGeoRouteReply::Error error = QGeoRouteReply::Error::NoError;
     QString errorString;
@@ -240,16 +242,18 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
 void GeoRoutingManagerEngineOsrm::updateRoutes()
 {
     assert(worker_->isFinished());
+    RouteReply* routeReply = routeReply_.load();
+    assert(routeReply);
     if (worker_->error == QGeoRouteReply::Error::NoError)
     {
-        routeReply_->setRoutes(worker_->routes);
-        routeReply_->setFinished(true);
-        emit finished(routeReply_);
+        routeReply->setRoutes(worker_->routes);
+        routeReply->setFinished(true);
+        emit finished(routeReply);
     }
     else
     {
-        routeReply_->setError(worker_->error, worker_->errorString);
-        emit error(routeReply_, worker_->error, worker_->errorString);
+        routeReply->setError(worker_->error, worker_->errorString);
+        emit error(routeReply, worker_->error, worker_->errorString);
     }
 }
 

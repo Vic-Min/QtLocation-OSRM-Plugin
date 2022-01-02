@@ -51,7 +51,7 @@ private:
     std::unique_ptr<const osrm::OSRM> osrm;
 friend class WorkerThread;
     WorkerThread* worker_;
-    RouteReply* routeReply_;
+    QAtomicPointer<RouteReply> routeReply_;
 };
 
 class WorkerThread : public QThread

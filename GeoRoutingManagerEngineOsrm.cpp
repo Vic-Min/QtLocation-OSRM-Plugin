@@ -136,7 +136,8 @@ QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteReque
     auto routeReply = new RouteReply(request, this);
     routeReply_.store(routeReply);
 
-    bool ok = connect(routeReply, SIGNAL(aborted()), this, SLOT(requestAborted()));
+    bool ok; (void)ok;
+    ok = connect(routeReply, &QGeoRouteReply::aborted, this, &GeoRoutingManagerEngineOsrm::requestAborted);
     assert(ok);
 
     worker_->start();

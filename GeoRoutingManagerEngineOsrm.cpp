@@ -232,6 +232,7 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
         //  There is no chance for the thread to clean up after itself,
         //  unlock any held mutexes, etc.
         //  In short, use this function only if absolutely necessary.
+        worker_->wait();
     }
 }
 

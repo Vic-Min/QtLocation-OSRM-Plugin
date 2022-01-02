@@ -225,6 +225,8 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
 {
     if (worker_->isRunning())
     {
+        auto routeReply = qobject_cast<RouteReply*>(sender());
+        assert(routeReply);
         if (routeReply == routeReply_.load())
             routeReply_.store(nullptr);
         // unfortunately there is no way to interrupt OSRM calculations,
@@ -232,8 +234,6 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
         worker_->terminate();
         worker_->wait();
 
-        auto routeReply = qobject_cast<RouteReply*>(sender());
-        assert(routeReply);
         routeReply->setError(QGeoRouteReply::UnknownError, "aborted");
     }
 }

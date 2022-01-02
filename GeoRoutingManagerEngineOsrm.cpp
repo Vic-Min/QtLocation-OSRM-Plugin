@@ -146,8 +146,11 @@ QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteReque
 }
 
 std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>>
-GeoRoutingManagerEngineOsrm::calcRoutes(const QGeoRouteRequest& request)const
+GeoRoutingManagerEngineOsrm::calcRoutes()const
 {
+    assert(routeReply_);
+    const QGeoRouteRequest request = routeReply_->request();
+
     QGeoRouteReply::Error error = QGeoRouteReply::Error::NoError;
     QString errorString;
     QList<QGeoRoute> routesOut;
@@ -254,7 +257,7 @@ void GeoRoutingManagerEngineOsrm::updateRoutes()
 
 void WorkerThread::run()
 {
-    auto result = owner_->calcRoutes(owner_->routeReply_->request());
+    auto result = owner_->calcRoutes();
     error       = std::get<QGeoRouteReply::Error>(result);
     errorString = std::get<QGeoRouteReply::Error>(result);
     routes      = std::get<QList<QGeoRoute>>(result);

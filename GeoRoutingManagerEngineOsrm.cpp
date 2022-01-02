@@ -140,6 +140,11 @@ QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteReque
     ok = connect(routeReply, &QGeoRouteReply::aborted, this, &GeoRoutingManagerEngineOsrm::requestAborted);
     assert(ok);
 
+    ok = connect(routeReply,
+        static_cast<void (QGeoRouteReply::*)(QGeoRouteReply::Error, const QString&)>(&QGeoRouteReply::error),
+        this, &GeoRoutingManagerEngineOsrm::requestError);
+    assert(ok);
+
     worker_->start();
 
     return routeReply;
@@ -237,6 +242,15 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
 
         routeReply->setError(QGeoRouteReply::UnknownError, "aborted");
     }
+}
+
+void GeoRoutingManagerEngineOsrm::requestError(QGeoRouteReply::Error err, const QString &errorString)
+{
+    auto routeReply = qobject_cast<RouteReply*>(sender());
+    assert(routeReply);
+    assert(routeReply->error() == err);
+    assert(routeReply->errorString() == errorString);
+    emit error(routeReply, err, errorString);
 }
 
 void GeoRoutingManagerEngineOsrm::updateRoutes()

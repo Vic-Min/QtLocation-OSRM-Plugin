@@ -41,8 +41,8 @@ public:
 
 private slots:
     void requestAborted();
+    void requestFinished();
     void requestError(QGeoRouteReply::Error error, const QString &errorString);
-    void updateRoutes();
 
 private:
     void calcRoutes()const;

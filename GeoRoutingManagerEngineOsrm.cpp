@@ -10,9 +10,6 @@ GeoRoutingManagerEngineOsrm::GeoRoutingManagerEngineOsrm(const QVariantMap &para
     worker_(new WorkerThread(this)),
     routeReply_(nullptr)
 {
-    bool ok = connect(worker_, SIGNAL(finished()), this, SLOT(updateRoutes()));
-    assert(ok);
-
     if (error)
         *error = QGeoServiceProvider::NoError;
     if (errorString)
@@ -140,6 +137,9 @@ QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteReque
     ok = connect(routeReply, &QGeoRouteReply::aborted, this, &GeoRoutingManagerEngineOsrm::requestAborted);
     assert(ok);
 
+    ok = connect(routeReply, &QGeoRouteReply::finished, this, &GeoRoutingManagerEngineOsrm::requestFinished);
+    assert(ok);
+
     ok = connect(routeReply,
         static_cast<void (QGeoRouteReply::*)(QGeoRouteReply::Error, const QString&)>(&QGeoRouteReply::error),
         this, &GeoRoutingManagerEngineOsrm::requestError);
@@ -227,6 +227,15 @@ void GeoRoutingManagerEngineOsrm::calcRoutes()const
     }
 }
 
+void GeoRoutingManagerEngineOsrm::requestFinished()
+{
+    auto routeReply = qobject_cast<RouteReply*>(sender());
+    assert(routeReply);
+    if (routeReply == routeReply_.load())
+        routeReply_.store(nullptr);
+    emit finished(routeReply);
+}
+
 void GeoRoutingManagerEngineOsrm::requestAborted()
 {
     if (worker_->isRunning())
@@ -251,21 +260,6 @@ void GeoRoutingManagerEngineOsrm::requestError(QGeoRouteReply::Error err, const 
     assert(routeReply->error() == err);
     assert(routeReply->errorString() == errorString);
     emit error(routeReply, err, errorString);
-}
-
-void GeoRoutingManagerEngineOsrm::updateRoutes()
-{
-    assert(worker_->isFinished());
-    RouteReply* routeReply = routeReply_.load();
-    assert(routeReply);
-    if (routeReply->error() == QGeoRouteReply::Error::NoError)
-    {
-        emit finished(routeReply);
-    }
-    else
-    {
-        emit error(routeReply, routeReply->error(), routeReply->errorString());
-    }
 }
 
 void WorkerThread::run()

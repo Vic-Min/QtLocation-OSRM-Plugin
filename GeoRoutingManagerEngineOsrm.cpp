@@ -225,6 +225,8 @@ void GeoRoutingManagerEngineOsrm::requestAborted()
 {
     if (worker_->isRunning())
     {
+        if (routeReply == routeReply_.load())
+            routeReply_.store(nullptr);
         // unfortunately there is no way to interrupt OSRM calculations,
         // so you have to kill the thread in which OSRM is running 
         worker_->terminate();

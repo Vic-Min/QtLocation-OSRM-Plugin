@@ -44,7 +44,7 @@ private slots:
     void updateRoutes();
 
 private:
-    std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>> calcRoutes()const;
+    void calcRoutes()const;
 
     osrm::engine::EngineConfig engineConfig;
     osrm::engine::api::RouteParameters routeParameters;
@@ -63,9 +63,6 @@ public:
         , owner_(parent)
     {
     };
-    QGeoRouteReply::Error error = QGeoRouteReply::Error::NoError;
-    QString errorString;
-    QList<QGeoRoute> routes;
 
 private:
     void run() override;

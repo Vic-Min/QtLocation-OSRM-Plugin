@@ -144,19 +144,15 @@ QGeoRouteReply* GeoRoutingManagerEngineOsrm::calculateRoute(const QGeoRouteReque
     return routeReply;
 }
 
-std::tuple<QGeoRouteReply::Error, QString, QList<QGeoRoute>>
-GeoRoutingManagerEngineOsrm::calcRoutes()const
+void GeoRoutingManagerEngineOsrm::calcRoutes()const
 {
-    const RouteReply* routeReply = routeReply_.load();
+    // routeReply_ can be changed on another thread while route calculation is
+    // in progress, so let's save it in routeReply
+    RouteReply* routeReply = routeReply_.load();
     assert(routeReply);
     const QGeoRouteRequest request = routeReply->request();
 
-    QGeoRouteReply::Error error = QGeoRouteReply::Error::NoError;
-    QString errorString;
-    QList<QGeoRoute> routesOut;
-
     osrm::engine::api::RouteParameters params;
-
 //    params.steps = true;
 //    params.alternatives = true;
 //    params.annotations = true;
@@ -182,6 +178,7 @@ GeoRoutingManagerEngineOsrm::calcRoutes()const
 
     if (status == osrm::engine::Status::Ok)
     {
+        QList<QGeoRoute> routesOut;
         assert( ! result->error());
         assert(result->routes());
         const auto& routes = *result->routes();
@@ -203,10 +200,12 @@ GeoRoutingManagerEngineOsrm::calcRoutes()const
             routeOut.setTravelTime(route->duration());
             routesOut.append(routeOut);
         }
-
+        routeReply->setRoutes(routesOut);
+        routeReply->setFinished(true);
     }
     else
     {
+        QString errorString;
         if (result->error())
         {
             const osrm::engine::api::fbresult::Error* errorCode = result->code();
@@ -218,11 +217,8 @@ GeoRoutingManagerEngineOsrm::calcRoutes()const
         {
             errorString = "UnknownError";
         }
-
-        error = QGeoRouteReply::Error::UnknownError;
+        routeReply->setError(QGeoRouteReply::Error::UnknownError, errorString);
     }
-
-    return {error, errorString, routesOut};
 }
 
 void GeoRoutingManagerEngineOsrm::requestAborted()
@@ -244,23 +240,17 @@ void GeoRoutingManagerEngineOsrm::updateRoutes()
     assert(worker_->isFinished());
     RouteReply* routeReply = routeReply_.load();
     assert(routeReply);
-    if (worker_->error == QGeoRouteReply::Error::NoError)
+    if (routeReply->error() == QGeoRouteReply::Error::NoError)
     {
-        routeReply->setRoutes(worker_->routes);
-        routeReply->setFinished(true);
         emit finished(routeReply);
     }
     else
     {
-        routeReply->setError(worker_->error, worker_->errorString);
-        emit error(routeReply, worker_->error, worker_->errorString);
+        emit error(routeReply, routeReply->error(), routeReply->errorString());
     }
 }
 
 void WorkerThread::run()
 {
-    auto result = owner_->calcRoutes();
-    error       = std::get<QGeoRouteReply::Error>(result);
-    errorString = std::get<QGeoRouteReply::Error>(result);
-    routes      = std::get<QList<QGeoRoute>>(result);
+    owner_->calcRoutes();
 };

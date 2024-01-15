@@ -64,6 +64,11 @@ public:
         , owner_(parent)
     {
     };
+    WorkerThread(const WorkerThread&) = delete;
+    WorkerThread(WorkerThread&&) = delete;
+    ~WorkerThread() override;
+    WorkerThread& operator=(const WorkerThread&) = delete;
+    WorkerThread& operator=(WorkerThread&&) = delete;
 
 private:
     void run() override;

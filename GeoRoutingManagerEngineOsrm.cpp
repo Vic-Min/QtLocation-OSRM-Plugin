@@ -262,6 +262,18 @@ void GeoRoutingManagerEngineOsrm::requestError(QGeoRouteReply::Error err, const 
     emit error(routeReply, err, errorString);
 }
 
+WorkerThread::~WorkerThread()
+{
+    if (isRunning())
+    {
+        // unfortunately there is no way to interrupt OSRM calculations,
+        // so you have to kill the thread in which OSRM is running
+        terminate();
+        wait();
+    }
+}
+
+
 void WorkerThread::run()
 {
     owner_->calcRoutes();
